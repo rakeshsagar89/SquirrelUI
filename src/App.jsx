@@ -1,17 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import SiteFooter from "./components/SiteFooter";
-import SiteNavbar from "./components/siteNavbar";
+import SiteNavbar from "./components/SiteNavbar";
 import Home from "./pages/Home";
 import Catalog from "./pages/Catalog";
 import Product from "./pages/Product";
 import Contact from "./pages/Contact";
-import Cart from "./pages/cart";
 import Checkout from "./pages/checkout";
-
+import Cart from "./pages/cart";
 export default function App() {
-  const [cart, setCart] = useState([]);
+  // Load cart from localStorage to persist on refresh
+  const [cart, setCart] = useState(() => {
+    const saved = localStorage.getItem("cart");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [showCart, setShowCart] = useState(false);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
 
   const addToCart = (product, qty = 1) => {
     setCart((prev) => {
@@ -27,8 +36,7 @@ export default function App() {
   const removeFromCart = (id) =>
     setCart((prev) => prev.filter((i) => i.id !== id));
 
-  return (
-    <>
+  return (<>
       <SiteNavbar
         cartCount={cart.reduce((s, i) => s + i.qty, 0)}
         onCartClick={() => setShowCart(true)}
@@ -37,15 +45,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home addToCart={addToCart} />} />
         <Route path="/catalog" element={<Catalog addToCart={addToCart} />} />
-        <Route
-          path="/product/:id"
-          element={<Product addToCart={addToCart} />}
-        />
+        <Route path="/product/:id" element={<Product addToCart={addToCart} />} />
         <Route path="/contact" element={<Contact />} />
-        <Route
-          path="/cart"
-          element={<Cart cart={cart} removeFromCart={removeFromCart} />}
-        />
+        <Route path="/cart" element={<Cart cart={cart} removeFromCart={removeFromCart} />} />
         <Route path="/checkout" element={<Checkout />} />
       </Routes>
 
@@ -60,20 +62,22 @@ export default function App() {
               <p>Your cart is empty.</p>
             ) : (
               cart.map((item) => (
-                <div key={item.id} className="cart-item">
-                  <img src={item.image} alt={item.name} />
-                  <div>
-                    <h6>{item.name}</h6>
-                    <p>
-                      ₹{item.price} × {item.qty}
-                    </p>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => removeFromCart(item.id)}
-                    >
-                      Remove
-                    </button>
+                <div key={item.id} className="cart-item d-flex align-items-center mb-3">
+                  <img
+                    src={item.images ? item.images[0] : item.image}
+                    alt={item.name || item.title}
+                    style={{ width: "60px", height: "60px", objectFit: "cover", marginRight: "10px" }}
+                  />
+                  <div className="flex-grow-1">
+                    <h6 className="mb-1">{item.name || item.title}</h6>
+                    <p className="mb-0">₹{item.price} × {item.qty}</p>
                   </div>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={() => removeFromCart(item.id)}
+                  >
+                    Remove
+                  </button>
                 </div>
               ))
             )}
@@ -88,6 +92,6 @@ export default function App() {
           </div>
         </div>
       )}
-    </>
+      </>
   );
 }
